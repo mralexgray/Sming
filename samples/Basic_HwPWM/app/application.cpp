@@ -37,6 +37,7 @@ void doPWM() {
 			countUp = true;
 		}
 	}
+	Serial.printf("%ld\n", i);
 	HW_pwm.analogWrite(2, i);
 }
 
