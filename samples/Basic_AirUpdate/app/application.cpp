@@ -2,21 +2,22 @@
 #include <SmingCore/SmingCore.h>
 
 #include <Libraries/Alex/Alex.h>
-
+/*
 void init(){ 
 
 	alex_init(); 
 
 	Serial.printf("\r\nBuilt at: %s\r\n", __TIMESTAMP__);
 }
-/*
+*/
+
 // If you want, you can define WiFi settings globally in Eclipse Environment Variables
 #ifndef WIFI_SSID
 	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
 	#define WIFI_PWD "PleaseEnterPass"
 #endif
 
-#define UPDATE_PIN 0 // GPIO0
+// #define UPDATE_PIN 0 // GPIO0
 HttpFirmwareUpdate airUpdater;
 
 void IRAM_ATTR interruptHandler()
@@ -33,9 +34,12 @@ void connectOk()
 {
 	Serial.println("I'm CONNECTED");
 
+  airUpdater.addItem(0x0000, "http://" OTA_IP "/" X0_BIN);//simple.anakod.ru/fw/eagle.flash.bin");
+  airUpdater.addItem(0x9000, "http://" OTA_IP "/" X9_BIN);
+
 	// Configure cloud update
-	airUpdater.addItem(0x0000, "http://simple.anakod.ru/fw/eagle.flash.bin");
-	airUpdater.addItem(0x9000, "http://simple.anakod.ru/fw/eagle.irom0text.bin");
+//	airUpdater.addItem(0x0000, "http://simple.anakod.ru/fw/eagle.flash.bin");
+//	airUpdater.addItem(0x9000, "http://simple.anakod.ru/fw/eagle.irom0text.bin");
 
 	attachInterrupt(UPDATE_PIN, interruptHandler, CHANGE);
 	Serial.println("\r\nPress GPIO0 to start cloud update!\r\n");
@@ -55,4 +59,4 @@ void init()
 	// Run our method when station was connected to AP
 	WifiStation.waitConnection(connectOk);
 }
-*/
+

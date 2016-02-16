@@ -14,8 +14,22 @@
 #define WIFI_PWD "dickens1931"
  
 #define OTA_IP "10.0.0.201"
-#define X0_BIN "0x00000.bin"
-#define X9_BIN "0x09000.bin"
+
+ // download urls, set appropriately
+#define ROM_0_URL  "http://" OTA_IP "/rom0.bin"
+#define ROM_1_URL  "http://" OTA_IP "/rom1.bin"
+#define SPIFFS_URL "http://" OTA_IP "/spiff_rom.bin"
+
+
+#define RBOOT_SPIFFS_0 0x100000
+#define RBOOT_SPIFFS_1 0x300000
+
+#ifndef SPIFF_SIZE
+#define SPIFF_SIZE 524288  // 512K
+#endif
+ 
+// #define X0_BIN "0x00000.bin"
+// #define X9_BIN "0x09000.bin"
 
 extern void alex_init();
 

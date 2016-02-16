@@ -27,7 +27,7 @@ RBOOT_E2_USER_ARGS ?= -quiet -bin -boot2
 
 ## COM port parameters
 # Default COM port speed (generic)
-COM_SPEED ?= 115200
+COM_SPEED ?= 230400
 
 # Default COM port speed (used for flashing)
 COM_SPEED_ESPTOOL ?= $(COM_SPEED)
@@ -374,9 +374,13 @@ flashinit:
 
 rebuild: clean all
 
+term:
+	$(TERMINAL)
+
 clean:
-#remove build artifacts
+	#remove build artifacts
 	$(Q) rm -rf $(BUILD_BASE)
 	$(Q) rm -rf $(FW_BASE)
 
 $(foreach bdir,$(BUILD_DIR),$(eval $(call compile-objects,$(bdir))))
+

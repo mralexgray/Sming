@@ -14,3 +14,5 @@ KILL_TERM    ?= pkill -9 -f "$(COM_PORT) $(COM_SPEED_SERIAL)" || exit 0
 GET_FILESIZE ?= stat -L -f%z
 TERMINAL     ?= python -m serial.tools.miniterm $(COM_PORT) $(COM_SPEED_SERIAL)
 MEMANALYZER  ?= $(OBJDUMP) -h -j .data -j .rodata -j .bss -j .text -j .irom0.text
+
+# TERMINAL     ?= minicom -D $(COM_PORT) -b $(COM_SPEED_SERIAL)

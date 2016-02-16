@@ -30,7 +30,7 @@
 # COM_PORT = /dev/tty.usbserial
 
 # Com port speed
-COM_SPEED = 115200
+COM_SPEED = 230400
 
 
 ifeq ($(OS),Windows_NT)

@@ -4,4 +4,7 @@ PWD=$(pwd)
 
 cd $SMING_HOME
 # make clean
+make $@ all
+
+cd /opt/sming/Sming/spiffy
 make
