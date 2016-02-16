@@ -1,0 +1,7 @@
+#!/usr/bin/env zsh
+
+PWD=$(pwd)
+
+cd $SMING_HOME
+# make clean
+make

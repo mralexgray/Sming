@@ -1,0 +1,9 @@
+Alex library for Arduino (Sming)
+
+Version .1
+
+by Alex Gray
+
+contact: alex@mrgray.com
+
+See the online documentation here: 
