@@ -25,9 +25,10 @@
 # COM_PORT = COM3
 
 ## MacOS / Linux:
-# COM_PORT = /dev/tty.usbserial
+COM_PORT := $(lastword $(wildcard /dev/tty.*))
 
 ## Com port speed
+COM_SPEED	= 230400## Com port speed
 #COM_SPEED	= 230400
 
 ## Configure flash parameters (for ESP12-E and other new boards):

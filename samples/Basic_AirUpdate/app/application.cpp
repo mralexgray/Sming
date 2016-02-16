@@ -1,6 +1,15 @@
 #include <user_config.h>
 #include <SmingCore/SmingCore.h>
 
+#include <Libraries/Alex/Alex.h>
+
+void init(){ 
+
+	alex_init(); 
+
+	Serial.printf("\r\nBuilt at: %s\r\n", __TIMESTAMP__);
+}
+/*
 // If you want, you can define WiFi settings globally in Eclipse Environment Variables
 #ifndef WIFI_SSID
 	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
@@ -46,3 +55,4 @@ void init()
 	// Run our method when station was connected to AP
 	WifiStation.waitConnection(connectOk);
 }
+*/

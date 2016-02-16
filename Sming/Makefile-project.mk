@@ -13,7 +13,9 @@
 COM_SPEED ?= 115200
 
 # Default COM port speed (used for flashing)
-COM_SPEED_ESPTOOL ?= $(COM_SPEED)
+COM_SPEED_ESPTOOL ?= 230400
+
+# $(COM_SPEED)
 
 # Default COM port speed (used in code)
 COM_SPEED_SERIAL  ?= $(COM_SPEED)
@@ -356,3 +358,12 @@ clean:
 	$(Q) rm -rf $(FW_BASE)
 
 $(foreach bdir,$(BUILD_DIR),$(eval $(call compile-objects,$(bdir))))
+
+BINS = $(wildcard out/firmware/*.bin)
+
+ota: all
+	@echo $(BINS)
+	cp $(BINS) /www
+
+term:
+	$(TERMINAL)

@@ -14,7 +14,7 @@ void doPWM()
 {
 	if(countUp){
 		i++;
-		if(i == 100){
+		if(i == 255){
 			countUp = false;
 			countDown = true;
 		}
@@ -33,6 +33,6 @@ void doPWM()
 void init()
 {
 	ledPWM.initialize();
-	procTimer.initializeMs(10, doPWM).start();
+	procTimer.initializeMs(100, doPWM).start();
 }
 
