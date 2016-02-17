@@ -1,0 +1,3 @@
+{"level":"error","message":"Not possible to join the room: Error: 404 {\"error\":\"Not Found\"}","timestamp":"2016-02-17T07:59:48.914Z"}
+{"level":"error","message":"There was an error joining the room.","timestamp":"2016-02-17T07:59:48.916Z"}
+{"level":"info","message":"Joined room: SmingHub/Sming","timestamp":"2016-02-17T08:00:09.266Z"}

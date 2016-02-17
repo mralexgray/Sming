@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+	#define SPECIAL           0xF8 //defaults to the usable BUSes uart0rx/tx uart1tx and hspi
+
+
 	// UART config
 	#define SERIAL_BAUD_RATE 115200
 

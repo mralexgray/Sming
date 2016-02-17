@@ -14,24 +14,63 @@
 #define WIFI_PWD "dickens1931"
  
 #define OTA_IP "10.0.0.201"
+#define X0_BIN "0x00000.bin"
+#define X9_BIN "0x09000.bin"
 
- // download urls, set appropriately
+extern void alex_init();
+
+#ifndef SPIFF_SIZE
+#define SPIFF_SIZE 524288  //512K
+#endif
+
+#ifndef RBOOT_SPIFFS_0
+#define RBOOT_SPIFFS_0 0x100000
+#define RBOOT_SPIFFS_1  0x300000
+#endif
+
+#ifndef ROM_0_URL
+// download urls, set appropriately
 #define ROM_0_URL  "http://" OTA_IP "/rom0.bin"
 #define ROM_1_URL  "http://" OTA_IP "/rom1.bin"
 #define SPIFFS_URL "http://" OTA_IP "/spiff_rom.bin"
 
-
-#define RBOOT_SPIFFS_0 0x100000
-#define RBOOT_SPIFFS_1 0x300000
-
-#ifndef SPIFF_SIZE
-#define SPIFF_SIZE 524288  // 512K
 #endif
- 
-// #define X0_BIN "0x00000.bin"
-// #define X9_BIN "0x09000.bin"
 
-extern void alex_init();
+class LED  {
+
+  enum Pattern {
+    Solid,
+    Blinking
+  };
+
+  public:
+    LED(int ping = LED_BUILTIN) {
+      pinMode(_pin =  pin, OUTPUT);
+      digitalWrite(_pin, _state = LOW); 
+    }
+    ~LED() {}
+    void on(){ digitalWrite(_pin, _state = HIGH); }
+    void off(){ digitalWrite(_pin, _state = LOW); }
+
+    void blink(unsigned int times = 1, unsigned int ms = 1000) {
+      _pattern = Blinking;
+      procTimer.initializeMs(ms,handle).start();
+
+    }
+    void toggle() { _state == HIGH ? off() : on(); }
+  protected:
+
+    void handle (){
+      if (_pattern == Solid || !_step) return;
+      if (_pattern == Blinkiung) toggle();
+      _step--;
+
+    }
+    Timer _timer;
+    unsigned int _speed, _step, _pin;
+    int _state;
+    Pattern _pattern;
+};
 
 /*
 

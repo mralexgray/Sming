@@ -16,7 +16,7 @@
 #include <SmingCore/SmingCore.h>
 #include <HardwarePWM.h>
 
-uint8_t pins[8] = { 4, 5, 0, 2, 15, 13, 12, 14 }; // List of pins that you want to connect to pwm
+uint8_t pins[ 8] = { 4, 5, 0, 2, 15, 13, 12, 14 }; // List of pins that you want to connect to pwm  4erd
 HardwarePWM HW_pwm(pins, 8);
 
 Timer procTimer;

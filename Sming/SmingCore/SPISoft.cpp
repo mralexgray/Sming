@@ -5,6 +5,7 @@ License: MIT
 Date: 15.07.2015
 Descr: Implement software SPI. To improve speed, GPIO16 is not supported(see Digital.cpp)
 */
+
 #include "SPISoft.h"
 
 #define SPEED 0 /* You gain ~0.7 kBps (more for larger data chunks)*/

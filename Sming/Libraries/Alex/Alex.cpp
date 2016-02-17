@@ -1,78 +1,77 @@
 
-// Please read Alex.h for information about the liscence and authors
-
-#if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif
 #include "Alex.h"
-
-#include <user_config.h>
-
 #include "SmingCore.h"
 
-
-
 rBootHttpUpdate* otaUpdater
-=0
-;
+= 0;
 
-void OtaUpdate_CallBack(bool result) {
-  
-  Serial.println("In callback...");
+void OtaUpdate_CallBack(bool result) { Serial.println("In callback...");
 
   if(!result) return (void) Serial.println("Firmware update failed!");
-
+  
   uint8 slot = rboot_get_current_rom() ? 0 : 1;
-
+  
   // set to boot new rom and then reboot
   Serial.printf("Firmware updated, rebooting to rom %d... (" __TIMESTAMP__ ")\r\n", slot);
   rboot_set_current_rom(slot);
   System.restart();
 }
 
-void OtaUpdate() {
-  
-  Serial.println("Updating...");
+void OtaUpdate() { Serial.println("Updating...");
   
   // need a clean object, otherwise if run before and failed will not run again
   if (otaUpdater) delete otaUpdater; otaUpdater
-  = 0;
+  = new rBootHttpUpdate();
   
   // select rom slot to flash
   rboot_config bootconf = rboot_get_config();
   uint8 slot = !bootconf.current_rom ? 1 : 0;
 
-#ifndef RBOOT_TWO_ROMS
-  // flash rom to position indicated in the rBoot config rom table
-  otaUpdater->addItem(bootconf.roms[slot], ROM_0_URL);
-#else
   // flash appropriate rom
-  if (slot == 0) otaUpdater->addItem(bootconf.roms[slot], ROM_0_URL);
-  else otaUpdater->addItem(bootconf.roms[slot], ROM_1_URL);
-
-#endif
-  
+  otaUpdater->addItem(bootconf.roms[slot], !slot ? ROM_0_URL : ROM_1_URL);
 #ifndef DISABLE_SPIFFS
   // use user supplied values (defaults for 4mb flash in makefile)
   otaUpdater->addItem(!slot ? RBOOT_SPIFFS_0 : RBOOT_SPIFFS_1, SPIFFS_URL);
-
 #endif
-
   // request switch and reboot on success
   otaUpdater->switchToRom(slot);
   // and/or set a callback (called on failure or success without switching requested)
   otaUpdater->setCallback(OtaUpdate_CallBack);
-
-  // start update
   otaUpdater->start();
 }
 
+static HttpClient maker;
+
+void onMake(HttpClient& client, bool successful);
+
+bool makeOTA(){
+
+  maker.downloadString("http://" OTA_IP ":3000/make", onMake);
+}
+
+void IRAM_ATTR interruptHandler() { Serial.println("Let's update vioa a button!");
+
+  detachInterrupt(UPDATE_PIN);
+  makeOTA();
+  // OtaUpdate();
+}
+
+void onMake(HttpClient& client, bool successful)
+{
+  if (successful) {
+    Serial.println("make was Successful! updating..");
+    OtaUpdate();
+  }
+  else {
+
+    Serial.println("Failed to make");
+    attachInterrupt(UPDATE_PIN, interruptHandler, CHANGE);
+  }
+}
+
 void Switch() {
-  uint8 before, after;
-  before = rboot_get_current_rom();
-  if (before == 0) after = 1; else after = 0;
+  uint8 before = rboot_get_current_rom(), after = !before ? 1 : 0;
   Serial.printf("Swapping from rom %d to rom %d.\r\n", before, after);
   rboot_set_current_rom(after);
   Serial.println("Restarting...\r\n");
@@ -135,15 +134,9 @@ void serialCallBack(Stream& stream, char arrivedChar, unsigned short availableCh
   } else Serial.println("unknown command");
 }
 
-void alex_init() {
+void getSpiffy(int slot){
   
-  Serial.begin(SERIAL_BAUD_RATE); // 115200 by default
-  Serial.systemDebugOutput(true); // Debug output to serial
-  
-  // mount spiffs
-  int slot = rboot_get_current_rom();
-#ifndef DISABLE_SPIFFS
-  if (slot == 0) {
+    if (!slot) {
 #ifdef RBOOT_SPIFFS_0
     debugf("trying to mount spiffs at %x, length %d", RBOOT_SPIFFS_0 + 0x40200000, SPIFF_SIZE);
     spiffs_mount_manual(RBOOT_SPIFFS_0 + 0x40200000, SPIFF_SIZE);
@@ -160,15 +153,35 @@ void alex_init() {
     spiffs_mount_manual(0x40500000, SPIFF_SIZE);
 #endif
   }
+}
+
+
+void alex_init() {
+  
+  Serial.begin(SERIAL_BAUD_RATE); // 115200 by default
+  // delay(2000);
+  Serial.systemDebugOutput(true); // Debug output to serial
+  
+  // mount spiffs
+  int slot = rboot_get_current_rom();
+
+#ifndef DISABLE_SPIFFS
+  getSpiffy(slot);
 #else
   debugf("spiffs disabled");
 #endif
+
   WifiAccessPoint.enable(false);
   
   Serial.printf("\r\nCurrently running rom %d.\r\nType 'help' and press enter for instructions.\r\n", slot);
 
   Serial.setCallback(serialCallBack);
+
+  attachInterrupt(UPDATE_PIN, interruptHandler, CHANGE);
+  Serial.printf("\r\nChange pin %i to start cloud update!\r\n", UPDATE_PIN);
+
 }
+
 
 /*
 HttpFirmwareUpdate airUpdater;
@@ -206,7 +219,7 @@ void alex_init() {
   // Run our method when station was connected to AP
   WifiStation.waitConnection(connectOk);
 }
-*/
+
 /*
 Alex::Alex(uint8_t pin,unsigned long interval_millis)
 {

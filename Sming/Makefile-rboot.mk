@@ -384,3 +384,7 @@ clean:
 
 $(foreach bdir,$(BUILD_DIR),$(eval $(call compile-objects,$(bdir))))
 
+ota:
+	cp out/firmware/rom0.bin /www
+	cp out/firmware/rom0.bin /www/rom1.bin
+	cp out/firmware/spiff_rom.bin /www
