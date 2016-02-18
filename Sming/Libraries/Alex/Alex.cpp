@@ -1,14 +1,28 @@
 
-#include "Arduino.h"
 #include "Alex.h"
-#include "SmingCore.h"
+
+#define X0_BIN "0x00000.bin"
+#define X9_BIN "0x09000.bin"
+
+#ifndef SPIFF_SIZE
+#define SPIFF_SIZE 524288  //512K
+#endif
+
+#ifndef RBOOT_SPIFFS_0
+#define RBOOT_SPIFFS_0 0x100000
+#define RBOOT_SPIFFS_1  0x300000
+#endif
+
+Led led1 = Led(LEDPIN_1), myLed2 = Led(LEDPIN_2);
+
+// Timer adcTimer;
 
 rBootHttpUpdate* otaUpdater
 = 0;
 
 void OtaUpdate_CallBack(bool result) { Serial.println("In callback...");
 
-  if(!result) return (void) Serial.println("Firmware update failed!");
+  if(!result) { led1.off(); return (void) Serial.println("Firmware update failed!"); }
   
   uint8 slot = rboot_get_current_rom() ? 0 : 1;
   
@@ -42,7 +56,6 @@ void OtaUpdate() { Serial.println("Updating...");
 }
 
 static HttpClient maker;
-
 void onMake(HttpClient& client, bool successful);
 
 bool makeOTA(){
@@ -53,18 +66,21 @@ bool makeOTA(){
 void IRAM_ATTR interruptHandler() { Serial.println("Let's update vioa a button!");
 
   detachInterrupt(UPDATE_PIN);
-  makeOTA();
-  // OtaUpdate();
+  led1.setTimer(500);
+  led1.blink(true);
+
+  makeOTA(); // OtaUpdate();
 }
 
 void onMake(HttpClient& client, bool successful)
 {
   if (successful) {
-    Serial.println("make was Successful! updating..");
-    OtaUpdate();
+      led1.setTimer(1000);
+      led1.blink(true);
+      Serial.println("make was Successful! updating..");
+      OtaUpdate();
   }
   else {
-
     Serial.println("Failed to make");
     attachInterrupt(UPDATE_PIN, interruptHandler, CHANGE);
   }
@@ -79,7 +95,8 @@ void Switch() {
 }
 
 void ShowInfo() {
-    Serial.printf("\r\nSDK: v%s\r\nFree Heap: %d\r\nCPU Frequency: %d MHz\r\nSystem Chip ID: %x\r\nSPI Flash ID: %x\r\nBoot ROM: %lu\r\n", system_get_sdk_version(), system_get_free_heap_size(),system_get_cpu_freq(), system_get_chip_id(), spi_flash_get_id(), rboot_get_current_rom());
+  
+  Serial.printf("\r\nSDK: v%s\r\nFree Heap: %d\r\nCPU Frequency: %d MHz\r\nSystem Chip ID: %x\r\nSPI Flash ID: %x\r\nBoot ROM: %lu\r\nCompiled at: " __TIMESTAMP__ "\r\n", system_get_sdk_version(), system_get_free_heap_size(),system_get_cpu_freq(), system_get_chip_id(), spi_flash_get_id(), rboot_get_current_rom());
     //Serial.printf("SPI Flash Size: %d\r\n", (1 << ((spi_flash_get_id() >> 16) & 0xff)));
 }
 
@@ -95,7 +112,6 @@ void serialCallBack(Stream& stream, char arrivedChar, unsigned short availableCh
   }
   
   if (!strcmp(str, "connect")) {
-    // connect to wifi
     WifiStation.config(WIFI_SSID, WIFI_PWD);
     WifiStation.enable(true);
   } else if (!strcmp(str, "ip"))
@@ -155,13 +171,40 @@ void getSpiffy(int slot){
   }
 }
 
+// void IRAM_ATTR readJoystick(){
+
+//   Serial.println("reading D1");
+//   Serial.println(digitalRead(D1));
+
+//    Serial.println("reading A0");
+//   Serial.println(analogRead(D1));
+//   led1.onFor(300);
+
+// }
+
+// void IRAM_ATTR rising(){ Serial.println("Rise from your grave"); }
+
+#include "Throttle.h"
+
+Throttle throttle;
 
 void alex_init() {
   
-  Serial.begin(SERIAL_BAUD_RATE); // 115200 by default
-  // delay(2000);
-  Serial.systemDebugOutput(true); // Debug output to serial
-  
+  Serial.begin(SERIAL_BAUD_RATE); 
+  Serial.systemDebugOutput(true); 
+
+  WifiStation.config(WIFI_SSID, WIFI_PWD);
+  WifiStation.enable(true);
+/*  
+  led1.setTimer(1000);
+  led1.blink(true);
+
+  led2.setTimer(500);
+  myLed2.blink(true);
+  */
+
+    // adcTimer.initializeMs(100, readJoystick).start();
+    
   // mount spiffs
   int slot = rboot_get_current_rom();
 
@@ -180,126 +223,32 @@ void alex_init() {
   attachInterrupt(UPDATE_PIN, interruptHandler, CHANGE);
   Serial.printf("\r\nChange pin %i to start cloud update!\r\n", UPDATE_PIN);
 
+  throttle.begin();
+
+  // attachInterrupt(D1, readJoystick, CHANGE);
+  //attachInterrupt(D1, readJoystick, FALLING);
+  //attachInterrupt(D1,  rising, RISING);
 }
 
 
 /*
-HttpFirmwareUpdate airUpdater;
 
-void IRAM_ATTR interruptHandler() {
-  detachInterrupt(UPDATE_PIN);
-  Serial.println("Let's do this cloud update!");
-  airUpdater.start(); // Start cloud update
-}
-
-// Will be called when WiFi station was connected to AP
-void connectOk() {
-
-  Serial.println("I'm CONNECTED");
-
-  // Configure cloud update
-  airUpdater.addItem(0x0000, "http://" OTA_IP "/" X0_BIN);//simple.anakod.ru/fw/eagle.flash.bin");
-  airUpdater.addItem(0x9000, "http://" OTA_IP "/" X9_BIN);
-
-  attachInterrupt(UPDATE_PIN, interruptHandler, CHANGE);
-  Serial.println("\r\nPress GPIO0 to start cloud update from " OTA_IP "! (" __TIMESTAMP__ ")\r\n");
-}
-
-void alex_init() {
-
-  spiffs_mount(); // Mount file system, in order to work with files
-
-  Serial.begin(SERIAL_BAUD_RATE); // 115200 by default
-  Serial.systemDebugOutput(true); // Debug output to serial
-
-  WifiStation.enable(true);
-  WifiStation.config(WIFI_SSID, WIFI_PWD);
-  WifiAccessPoint.enable(false);
-
-  // Run our method when station was connected to AP
-  WifiStation.waitConnection(connectOk);
-}
-
-/*
-Alex::Alex(uint8_t pin,unsigned long interval_millis)
-{
-	interval(interval_millis);
-	previous_millis = millis();
-	state = digitalRead(pin);
-    this->pin = pin;
-}
-
-
-void Alex::write(int new_state)
-       {
-       	this->state = new_state;
-       	digitalWrite(pin,state);
-       }
-
-
-void Alex::interval(unsigned long interval_millis)
-{
-  this->interval_millis = interval_millis;
-  this->reAlex_millis = 0;
-}
-
-void Alex::reAlex(unsigned long interval)
-{
-	 this->reAlex_millis = interval;
-}
-
-
-
-int Alex::update()
-{
-	if ( deAlex() ) {
-        reAlex(0);
-        return stateChanged = 1;
-    }
-
-     // We need to reAlex, so simulate a state change
-     
-	if ( reAlex_millis && (millis() - previous_millis >= reAlex_millis) ) {
-        previous_millis = millis();
-		 reAlex(0);
-		 return stateChanged = 1;
-	}
-
-	return stateChanged = 0;
-}
-
-
-unsigned long Alex::duration()
-{
-  return millis() - previous_millis;
-}
-
-
-int Alex::read()
-{
-	return (int)state;
-}
-
-
-// Protected: deAlexs the pin
-int Alex::deAlex() {
-	
-	uint8_t newState = digitalRead(pin);
-	if (state != newState ) {
-  		if (millis() - previous_millis >= interval_millis) {
-  			previous_millis = millis();
-  			state = newState;
-  			return 1;
-	}
-  }
+void Stream_printf_progmem(Print &out, PGM_P format, ...) {
   
-  return 0;
-	
+  // if (!serial_connected) return;
+  // program memory version of printf - copy of format string and result share a buffer
+  // so as to avoid too much memory use
+  char formatString[128], *ptr;
+  strncpy_P(formatString, format, sizeof(formatString)); // copy in from program mem
+  // null terminate - leave last char since we might need it in worst case for result's \0
+  formatString[sizeof(formatString)-2]='\0';
+  ptr = &formatString[strlen(formatString)+1]; // our result buffer...
+  va_list args;
+  va_start (args,format);
+  vsnprintf(ptr, sizeof(formatString)-1-strlen(formatString), formatString, args );
+  va_end (args);
+  formatString[sizeof(formatString)-1]='\0';
+  out.print(ptr);
 }
-
-// The risingEdge method is true for one scan after the de-Alexd input goes from off-to-on.
-bool  Alex::risingEdge() { return stateChanged && state; }
-// The fallingEdge  method it true for one scan after the de-Alexd input goes from on-to-off. 
-bool  Alex::fallingEdge() { return stateChanged && !state; }
-
+ 
 */

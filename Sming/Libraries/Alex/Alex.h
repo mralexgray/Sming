@@ -8,33 +8,80 @@
 
 #pragma once
 
+#include <SmingCore.h>
+#include "Arduino.h"
+
+#include <user_config.h>
+
 #define UPDATE_PIN 0 // GPIO0  aka D3
 
 #define WIFI_SSID "Dickens"
 #define WIFI_PWD "dickens1931"
  
 #define OTA_IP "10.0.0.201"
-#define X0_BIN "0x00000.bin"
-#define X9_BIN "0x09000.bin"
 
 extern void alex_init();
 
-#ifndef SPIFF_SIZE
-#define SPIFF_SIZE 524288  //512K
-#endif
-
-#ifndef RBOOT_SPIFFS_0
-#define RBOOT_SPIFFS_0 0x100000
-#define RBOOT_SPIFFS_1  0x300000
-#endif
-
-#ifndef ROM_0_URL
-// download urls, set appropriately
+#ifndef ROM_0_URL // download urls, set appropriately
 #define ROM_0_URL  "http://" OTA_IP "/rom0.bin"
 #define ROM_1_URL  "http://" OTA_IP "/rom1.bin"
 #define SPIFFS_URL "http://" OTA_IP "/spiff_rom.bin"
-
 #endif
+
+#define      ANALOG_MAX  1023
+#define         PWM_MAX  22222 // 255
+#define         PWM_MIN  0
+
+// #define min(a,b) ((a)<(b)?(a):(b))
+// #define max(a,b) ((a)>(b)?(a):(b))
+// #define abs(x) ((x)>0?(x):-(x))
+// #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+// #define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
+// #define radians(deg) ((deg)*DEG_TO_RAD)
+// #define degrees(rad) ((rad)*RAD_TO_DEG)
+// #define sq(x) ((x)*(x))
+
+enum PinState {
+#ifdef ESP8266
+  OFF = HIGH, ON = LOW,
+#else
+  OFF = LOW,  ON = HIGH,
+#endif
+  PWM
+};
+
+#if    defined(BUILTIN_LED)
+  #define LED1 BUILTIN_LED
+#elif  defined(LED_BUILTIN)
+  #define LED1 LED_BUILTIN
+#elif  defined(ESP8266)
+  #define LED1 D0
+#else
+  #define LED1 13
+#endif
+#define   LED2 2
+// #ifdef ESP8266
+#define            VREF  3.3
+// #else
+// #define            VREF  5.0
+// #endif
+
+// extern void Stream_printf_progmem(Print &out, PGM_P format, ...);
+
+#define     PF(...)   Serial.printf(__VA_ARGS__)
+#define    PLN(X)       Serial.println(X)
+#define     PO(X)       Serial.print(X)
+
+#define  NO_OP(...) ({ __VA_ARGS__; (void)NULL; })
+#define F_TO_S(FLOAT)   (char*) ({ char s[7];  dtostrf(FLOAT, 4, 3, s); s; })
+#define SAME_C(X,Z)     (strcmp(X,Z) == 0)
+
+#define OFF HIGH
+#define ON LOW
+
+#include "Led.h"
+
+/*
 
 class LED  {
 
