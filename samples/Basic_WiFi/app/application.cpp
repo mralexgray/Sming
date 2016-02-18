@@ -61,16 +61,16 @@ void init()
 	System.onReady(ready);
 
 	// Soft access point
-	WifiAccessPoint.enable(true);
-	WifiAccessPoint.config("Sming InternetOfThings", "", AUTH_OPEN);
+	// WifiAccessPoint.enable(true);
+	// WifiAccessPoint.config("Sming InternetOfThings", "", AUTH_OPEN);
 
 	// Station - WiFi client
 	WifiStation.enable(true);
 	WifiStation.config(WIFI_SSID, WIFI_PWD); // Put you SSID and Password here
 
 	// Optional: Change IP addresses (and disable DHCP)
-	WifiAccessPoint.setIP(IPAddress(192, 168, 2, 1));
-	WifiStation.setIP(IPAddress(192, 168, 1, 171));
+	// WifiAccessPoint.setIP(IPAddress(192, 168, 2, 1));
+	// WifiStation.setIP(IPAddress(192, 168, 1, 171));
 
 
 	// Print available access points
