@@ -1,3 +1,7 @@
+
+include $(SMING_HOME)/Makefile-alex.mk
+
+
 ## Local build configuration
 ## Parameters configured here will override default and ENV values.
 ## Uncomment and change examples:

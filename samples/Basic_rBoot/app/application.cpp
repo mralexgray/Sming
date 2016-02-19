@@ -3,6 +3,7 @@
 #include <SmingCore/SmingCore.h>
 
 #include <Libraries/Alex/Alex.h>
+
 /*
 
 // #define UP_PIN 14 // D5   // GPIO0
@@ -28,6 +29,7 @@ void changeSpeed(bool faster) {
 void IRAM_ATTR upHandler() {  changeSpeed(true); }
 void IRAM_ATTR downHandler() { changeSpeed(false); }
 */
+
 void init(){
 
 	alex_init();

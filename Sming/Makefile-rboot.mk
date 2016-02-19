@@ -31,6 +31,7 @@ COM_SPEED ?= 230400
 
 # Default COM port speed (used for flashing)
 COM_SPEED_ESPTOOL ?= $(COM_SPEED)
+# 460800
 
 # Default COM port speed (used in code)
 COM_SPEED_SERIAL  ?= 115200 

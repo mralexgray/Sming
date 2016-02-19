@@ -1,4 +1,6 @@
 
+// #include "Arduino.h"
+// #include "Runloop.h"
 #include "Alex.h"
 
 #define X0_BIN "0x00000.bin"
@@ -15,7 +17,8 @@
 
 Led led1 = Led(LEDPIN_1), myLed2 = Led(LEDPIN_2);
 
-// Timer adcTimer;
+
+#pragma mark - OTA
 
 rBootHttpUpdate* otaUpdater
 = 0;
@@ -25,11 +28,9 @@ void OtaUpdate_CallBack(bool result) { Serial.println("In callback...");
   if(!result) { led1.off(); return (void) Serial.println("Firmware update failed!"); }
   
   uint8 slot = rboot_get_current_rom() ? 0 : 1;
-  
   // set to boot new rom and then reboot
   Serial.printf("Firmware updated, rebooting to rom %d... (" __TIMESTAMP__ ")\r\n", slot);
-  rboot_set_current_rom(slot);
-  System.restart();
+  rboot_set_current_rom(slot); System.restart();
 }
 
 void OtaUpdate() { Serial.println("Updating...");
@@ -55,36 +56,26 @@ void OtaUpdate() { Serial.println("Updating...");
   otaUpdater->start();
 }
 
+#pragma mark - remote ota maker
+
 static HttpClient maker;
 void onMake(HttpClient& client, bool successful);
 
-bool makeOTA(){
-
-  maker.downloadString("http://" OTA_IP ":3000/make", onMake);
-}
+bool makeOTA(){ maker.downloadString("http://" OTA_IP ":3000/make", onMake); }
 
 void IRAM_ATTR interruptHandler() { Serial.println("Let's update vioa a button!");
 
-  detachInterrupt(UPDATE_PIN);
-  led1.setTimer(500);
-  led1.blink(true);
-
-  makeOTA(); // OtaUpdate();
+  detachInterrupt(UPDATE_PIN); makeOTA(); // OtaUpdate();
 }
 
-void onMake(HttpClient& client, bool successful)
-{
-  if (successful) {
-      led1.setTimer(1000);
-      led1.blink(true);
-      Serial.println("make was Successful! updating..");
-      OtaUpdate();
-  }
-  else {
-    Serial.println("Failed to make");
-    attachInterrupt(UPDATE_PIN, interruptHandler, CHANGE);
-  }
+void onMake(HttpClient& client, bool successful) {
+
+  if (successful) return (void)Serial.println("make was Successful! updating.."), OtaUpdate();
+  
+  Serial.println("Failed to make"); attachInterrupt(UPDATE_PIN, interruptHandler, CHANGE);
 }
+
+#pragma mark - commands
 
 void Switch() {
   uint8 before = rboot_get_current_rom(), after = !before ? 1 : 0;
@@ -100,55 +91,8 @@ void ShowInfo() {
     //Serial.printf("SPI Flash Size: %d\r\n", (1 << ((spi_flash_get_id() >> 16) & 0xff)));
 }
 
-void serialCallBack(Stream& stream, char arrivedChar, unsigned short availableCharsCount) {
 
-  // Serial.println("INside serial callback");
 
-  if (arrivedChar != '\n') return;
-  char str[availableCharsCount];
-  for (int i = 0; i < availableCharsCount; i++) {
-    str[i] = stream.read();
-    if (str[i] == '\r' || str[i] == '\n') str[i] = '\0';
-  }
-  
-  if (!strcmp(str, "connect")) {
-    WifiStation.config(WIFI_SSID, WIFI_PWD);
-    WifiStation.enable(true);
-  } else if (!strcmp(str, "ip"))
-    Serial.printf("ip: %s mac: %s\r\n", WifiStation.getIP().toString().c_str(), WifiStation.getMAC().c_str());
-  else if (!strcmp(str, "ota"))       OtaUpdate();
-  else if (!strcmp(str, "switch"))    Switch();
-  else if (!strcmp(str, "restart"))   System.restart();
-  else if (!strcmp(str, "ls")) {
-    Vector<String> files = fileList();
-    Serial.printf("filecount %d\r\n", files.count());
-    for (unsigned int i = 0; i < files.count(); i++) {
-      Serial.println(files[i]);
-    }
-  } else if (!strcmp(str, "cat")) {
-    Vector<String> files = fileList();
-    if (files.count() > 0) {
-      Serial.printf("dumping file %s:\r\n", files[0].c_str());
-      Serial.println(fileGetContent(files[0]));
-    } else Serial.println("Empty spiffs!");
-  } else if (!strcmp(str, "info")) ShowInfo();
-  else if (!strcmp(str, "help")) {
-    Serial.println();
-    Serial.println("available commands:");
-    Serial.println("  help - display this message");
-    Serial.println("  ip - show current ip address");
-    Serial.println("  connect - connect to wifi");
-    Serial.println("  restart - restart the esp8266");
-    Serial.println("  switch - switch to the other rom and reboot");
-    Serial.println("  ota - perform ota update, switch rom and reboot");
-    Serial.println("  info - show esp8266 info");
-#ifndef DISABLE_SPIFFS
-    Serial.println("  ls - list files in spiffs");
-    Serial.println("  cat - show first file in spiffs");
-#endif
-    Serial.println();
-  } else Serial.println("unknown command");
-}
 
 void getSpiffy(int slot){
   
@@ -171,39 +115,143 @@ void getSpiffy(int slot){
   }
 }
 
-// void IRAM_ATTR readJoystick(){
+/*
+void IRAM_ATTR readJoystick(){
 
-//   Serial.println("reading D1");
-//   Serial.println(digitalRead(D1));
+  Serial.println("reading D1");
+  Serial.println(digitalRead(D1));
 
-//    Serial.println("reading A0");
-//   Serial.println(analogRead(D1));
-//   led1.onFor(300);
+   Serial.println("reading A0");
+  Serial.println(analogRead(D1));
+  led1.onFor(300);
 
-// }
+}
 
-// void IRAM_ATTR rising(){ Serial.println("Rise from your grave"); }
+void IRAM_ATTR rising(){ Serial.println("Rise from your grave"); }
+*/
+
+// request switch and reboot on success// Will be called when WiFi station network scan was completed
+void listNetworks(bool succeeded, BssList list) {
+
+  if (!succeeded) return (void)Serial.println("Failed to scan networks");
+
+  for (int i = 0; i < list.count(); i++)
+    Serial.printf("\tWiFi: %s, %s%s\r\n", list[i].ssid, list[i].getAuthorizationMethodName(),
+        list[i].hidden ? " (hidden)" : "");
+}
+
+void connect(){ WifiStation.config(WIFI_SSID, WIFI_PWD); WifiStation.enable(true); }
+
+// Will be called when WiFi station was connected to AP
+void connectOk()
+{
+  debugf("I'm CONNECTED");
+  Serial.println(WifiStation.getIP().toString());
+}
+
+// Will be called when WiFi station timeout was reached
+void connectFail()
+{
+  debugf("I'm NOT CONNECTED!");
+  WifiStation.waitConnection(connectOk, 10, connectFail); // Repeat and check again
+}
+
+// Will be called when WiFi hardware and software initialization was finished
+// And system initialization was completed
+void ready()
+{
+  debugf("READY!");
+  // If AP is enabled:
+  debugf("AP. ip: %s mac: %s", WifiAccessPoint.getIP().toString().c_str(), WifiAccessPoint.getMAC().c_str());
+}
+
+
+const char * HELP_SCREEN = R"(
+Available commands:
+   
+   help/? - display this message
+       ip - show current ip address
+  connect - connect to wifi
+  restart - restart the esp8266
+   switch - switch to the other rom and reboot
+      ota - perform ota update, switch rom and reboot
+   remake - remake libsming remotely using nodejs
+     info - show esp8266 info
+       ls - list files in spiffs
+      cat - show first file in spiffs
+)";
+
+
+void serialCallBack(Stream& stream, char arrivedChar, unsigned short availableCharsCount) {
+
+  if (arrivedChar != '\n') return;
+  char str[availableCharsCount];
+  for (int i = 0; i < availableCharsCount; i++) {
+    str[i] = stream.read();
+    if (str[i] == '\r' || str[i] == '\n') str[i] = '\0';
+  }
+
+  switchs(str) {
+
+    icases("ip")
+      Serial.printf("ip: %s mac: %s\r\n", WifiStation.getIP().toString().c_str(), WifiStation.getMAC().c_str());
+      break;
+    icases("connect")     connect();                    break;
+    icases("remake")      makeOTA();                    break;
+    icases("ota")         OtaUpdate();                  break;
+    icases("switch")      Switch();                     break;
+    icases("restart")     System.restart();             break;
+    icases("info")        ShowInfo();                   break;
+    icases("help")
+    cases("?")            Serial.println(HELP_SCREEN);  break;
+    icases("ls") 
+      Vector<String> files = fileList();
+      Serial.printf("filecount %d\r\n", files.count());
+      for (unsigned int i = 0; i < files.count(); i++) Serial.println(files[i]);
+      break;
+    icases("cat")
+      Vector<String> files = fileList();
+      if (files.count() > 0) 
+        Serial.printf("dumping file %s:\r\n%s\r\n", files[0].c_str(), fileGetContent(files[0]));
+      else Serial.println("Empty spiffs!");
+      break;
+    defaults
+      Serial.printf("No match\n");
+      break;
+    
+    } switchs_end;
+}
 
 #include "Throttle.h"
 
 Throttle throttle;
+
+// uint8_t pins[ 1] = { D5 }; // List of pins that you want to connect to pwm  4erd
+// HardwarePWM hwpwm(pins, 1);
 
 void alex_init() {
   
   Serial.begin(SERIAL_BAUD_RATE); 
   Serial.systemDebugOutput(true); 
 
-  WifiStation.config(WIFI_SSID, WIFI_PWD);
-  WifiStation.enable(true);
-/*  
+
+  // Set system ready callback method
+  System.onReady(ready);
+
+  // Print available access points
+  WifiStation.startScan(listNetworks); // In Sming we can start network scan from init method without additional code
+
+  // Run our method when station was connected to AP (or not connected)
+  WifiStation.waitConnection(connectOk, 30, connectFail); // We recommend 20+ seconds at start
+
+  /*
   led1.setTimer(1000);
   led1.blink(true);
-
   led2.setTimer(500);
   myLed2.blink(true);
   */
 
-    // adcTimer.initializeMs(100, readJoystick).start();
+    // adcTimer.initializeMs(100, readJoystick()).start();
     
   // mount spiffs
   int slot = rboot_get_current_rom();
@@ -223,16 +271,18 @@ void alex_init() {
   attachInterrupt(UPDATE_PIN, interruptHandler, CHANGE);
   Serial.printf("\r\nChange pin %i to start cloud update!\r\n", UPDATE_PIN);
 
-  throttle.begin();
-
   // attachInterrupt(D1, readJoystick, CHANGE);
   //attachInterrupt(D1, readJoystick, FALLING);
   //attachInterrupt(D1,  rising, RISING);
+
+  // throttle._pwm = &hwpwm;
+  // throttle.begin();
+
 }
 
 
-/*
 
+/*
 void Stream_printf_progmem(Print &out, PGM_P format, ...) {
   
   // if (!serial_connected) return;

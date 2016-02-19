@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <SmingCore.h>
-#include "Arduino.h"
+#include "Runloop.h"
+
 
 #include <user_config.h>
 
@@ -28,43 +28,6 @@ extern void alex_init();
 #define SPIFFS_URL "http://" OTA_IP "/spiff_rom.bin"
 #endif
 
-#define      ANALOG_MAX  1023
-#define         PWM_MAX  22222 // 255
-#define         PWM_MIN  0
-
-// #define min(a,b) ((a)<(b)?(a):(b))
-// #define max(a,b) ((a)>(b)?(a):(b))
-// #define abs(x) ((x)>0?(x):-(x))
-// #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
-// #define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
-// #define radians(deg) ((deg)*DEG_TO_RAD)
-// #define degrees(rad) ((rad)*RAD_TO_DEG)
-// #define sq(x) ((x)*(x))
-
-enum PinState {
-#ifdef ESP8266
-  OFF = HIGH, ON = LOW,
-#else
-  OFF = LOW,  ON = HIGH,
-#endif
-  PWM
-};
-
-#if    defined(BUILTIN_LED)
-  #define LED1 BUILTIN_LED
-#elif  defined(LED_BUILTIN)
-  #define LED1 LED_BUILTIN
-#elif  defined(ESP8266)
-  #define LED1 D0
-#else
-  #define LED1 13
-#endif
-#define   LED2 2
-// #ifdef ESP8266
-#define            VREF  3.3
-// #else
-// #define            VREF  5.0
-// #endif
 
 // extern void Stream_printf_progmem(Print &out, PGM_P format, ...);
 
@@ -76,10 +39,41 @@ enum PinState {
 #define F_TO_S(FLOAT)   (char*) ({ char s[7];  dtostrf(FLOAT, 4, 3, s); s; })
 #define SAME_C(X,Z)     (strcmp(X,Z) == 0)
 
-#define OFF HIGH
-#define ON LOW
 
-#include "Led.h"
+
+#include "libc_replacements.h"
+
+/** Begin a switch for the string x */
+#define switchs(x) \
+    { char *__sw = (x); bool __done = false; bool __cont = false; do {
+
+// #define switchs(x) \
+//     { char *__sw = (x); bool __done = false; bool __cont = false; \
+//         regex_t __regex; regcomp(&__regex, ".*", 0); do {
+
+/** Check if the string matches the cases argument (case sensitive) */
+#define cases(x)    } if ( __cont || !strcmp ( __sw, x ) ) \
+                        { __done = true; __cont = true;
+
+/** Check if the string matches the icases argument (case insensitive) */
+#define icases(x)    } if ( __cont || !strcasecmp ( __sw, x ) ) { \
+                        __done = true; __cont = true;
+
+/** Check if the string matches the specified regular expression using regcomp(3) */
+// #define cases_re(x,flags) } regfree ( &__regex ); if ( __cont || ( \
+//                               0 == regcomp ( &__regex, x, flags ) && \
+//                               0 == regexec ( &__regex, __sw, 0, NULL, 0 ) ) ) { \
+//                                 __done = true; __cont = true;
+
+/** Default behaviour */
+#define defaults    } if ( !__done || __cont ) {
+
+// /** Close the switchs */
+// #define switchs_end } while ( 0 ); regfree(&__regex); }
+
+/** Close the switchs */
+#define switchs_end } while ( 0 );  }
+
 
 /*
 
@@ -127,28 +121,28 @@ class Alex
 {
 
 public:
-	// Initialize
+  // Initialize
   Alex(uint8_t pin, unsigned long interval_millis ); 
-	// Sets the deAlex interval
+  // Sets the deAlex interval
   void interval(unsigned long interval_millis); 
-	// Updates the pin
-	// Returns 1 if the state changed
-	// Returns 0 if the state did not change
+  // Updates the pin
+  // Returns 1 if the state changed
+  // Returns 0 if the state did not change
   int update(); 
-	// Forces the pin to signal a change (through update()) in X milliseconds 
-	// even if the state does not actually change
-	// Example: press and hold a button and have it repeat every X milliseconds
+  // Forces the pin to signal a change (through update()) in X milliseconds 
+  // even if the state does not actually change
+  // Example: press and hold a button and have it repeat every X milliseconds
   void reAlex(unsigned long interval); 
-	// Returns the updated pin state
+  // Returns the updated pin state
   int read();
-	// Sets the stored pin state
+  // Sets the stored pin state
   void write(int new_state);
     // Returns the number of milliseconds the pin has been in the current state
   unsigned long duration();
   // The risingEdge method is true for one scan after the de-Alexd input goes from off-to-on.
-	bool risingEdge();
+  bool risingEdge();
   // The fallingEdge  method it true for one scan after the de-Alexd input goes from on-to-off. 
-	bool fallingEdge();
+  bool fallingEdge();
   
 protected:
   int deAlex();
@@ -158,3 +152,12 @@ protected:
   uint8_t stateChanged;
 }
 */
+
+// #define min(a,b) ((a)<(b)?(a):(b))
+// #define max(a,b) ((a)>(b)?(a):(b))
+// #define abs(x) ((x)>0?(x):-(x))
+// #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+// #define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
+// #define radians(deg) ((deg)*DEG_TO_RAD)
+// #define degrees(rad) ((rad)*RAD_TO_DEG)
+// #define sq(x) ((x)*(x))

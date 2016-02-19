@@ -3,29 +3,4 @@
 
 #include "Runloop.h"
 
-class Led : public Runloop {
-
-  public:
-
-  Led(int p) : _pin(p) { pinMode(_pin, OUTPUT); };
-  
-  void blink(bool blinking) { if (!blinking)  return _timer.stop();
-  
-    _timer.initializeMs(_interval, TimerDelegate(&Led::toggle, this)).start();
-  }
-  void toggle() { digitalWrite(_pin, _state = !_state); }
-  void off() { if (_state == OFF) return; _timer.stop(); digitalWrite(_pin, _state = OFF); }
-  void on() { if (_state == ON) return; _timer.stop(); digitalWrite(_pin, _state = ON); }
-
-  void onFor(unsigned int duration) {
-    on();
-
-    _timer.initializeMs(duration, TimerDelegate(&Led::off, this)).start();
-  }
-  private:
-    int  _state = OFF, _pin = 2;  
-};
-
-#define LEDPIN_1 BUILTIN_LED  // GPIO2
-#define LEDPIN_2 D8           // GPIO4
 

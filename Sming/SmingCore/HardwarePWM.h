@@ -34,6 +34,9 @@ extern "C" {
 
 class HardwarePWM {
 public:
+    // HardwarePWM();
+    // void setPin(uint8 pin);
+
     /** @brief  Instantiate hardware PWM object
      *  @param  pins Pointer to array of pins to control
      *  @param  no_of_pins Quantity of elements in array of pins

@@ -1,16 +1,37 @@
 
 #include "Alex.h"
 #include "Throttle.h"
-#include  <Arduino.h>
-#include  <SmingCore.h>
+// #include  "Arduino.h"
+// #include  "SmingCore.h"
+
 
 #define HALF_OF(X) X/2
 #define CENTER  (int) HALF_OF(ANALOG_MAX)
 #define THRESH  (int) HALF_OF(CENTER)
 
 
+ Control::Control(
+              UInt       pinIn,
+              UInt      pinOut,
+              float     minOut,
+              float     maxOut,
+              UInt      levels,
+              Ctrl controlType) :
+
+      _pinIn(pinIn), 
+    _pinOut(pinOut), 
+    _minOut(minOut), 
+    _maxOut(maxOut),
+    _levels(levels),
+    _controlType(controlType) {  /* this->_interval = DEBOUNCE_DELAY; */ }
+  
 void Control::begin(){
   if (_initialized) return;
+
+  // static uint8_t pins[ 1] = { _pinIn };
+  // HardwarePWM hwpwm(pins,1);
+  // _pwm = (void*)&hwpwm;
+
   pinMode(_pinIn, INPUT);
   PF("Throttle is Ready, girl.\n");//, className());
   _initialized = true;
@@ -63,7 +84,7 @@ void      Control::setLevel(int s)  {
   if (s == _level || s > _levels || s < 0) return; _level = s; 
 
 
-  _pwm.analogWrite(_pinOut, getPWM());
+  // _pwm->analogWrite(_pinOut, getPWM());
 
   // HW_pwm.analogWrite(PWM_PIN, speed * 1000);
   // analogWrite(_pinOut, getPWM());
@@ -76,7 +97,7 @@ Control&  Control::operator--()  { setLevel(_level - 1); return *this; }
 
 void  Control::print() {
   
-  PF("%s:%i/%i DUTY:%s%% (rng:%sv) v:%s/%s PWM:%i/%i interval:%i\n",  /** className() **/ "throttle", _level, _levels,
+  Serial.printf("%s:%i/%i DUTY:%s%% (rng:%sv) v:%s/%s PWM:%i/%i interval:%i\n",  /** className() **/ "throttle", _level, _levels,
                                                           F_TO_S(getDuty()), F_TO_S(voltageRange()),
                                                           F_TO_S(getVoltage()), F_TO_S(VREF),
                                                           getPWM(), PWM_MAX, _interval); 

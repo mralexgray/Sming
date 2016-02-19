@@ -1,9 +1,12 @@
 #!/usr/bin/env zsh
 
+set -e 
 PWD=$(pwd)
 
 cd $SMING_HOME
 # make clean
+[[ $# > 1 && $1 != "clean" && -d ${CLEAN=out/build/Libraries/$1} ]] && echo cleaning $1 && rm -r "$CLEAN"
+
 make $@ all
 
 cd /opt/sming/Sming/spiffy

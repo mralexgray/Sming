@@ -18,7 +18,7 @@
 
 #include "HardwarePWM.h"
 
-HardwarePWM::HardwarePWM(uint8 *pins, uint8 no_of_pins) {
+ HardwarePWM::HardwarePWM(uint8 *pins, uint8 no_of_pins) {
 	channel_count = no_of_pins;
 	if (no_of_pins > 0) {
 		uint32 io_info[PWM_CHANNEL_NUM_MAX][3]; // pin information
@@ -35,7 +35,25 @@ HardwarePWM::HardwarePWM(uint8 *pins, uint8 no_of_pins) {
 		maxduty = 22222; // for period of 1000
 	}
 }
+/*
+HardwarePWM::HardwarePWM() {
+	channel_count = 1;
+}
 
+void HardwarePWM::setPin(uint8 pin){
+
+	uint32 io_info[PWM_CHANNEL_NUM_MAX][3]; // pin information
+	uint32 pwm_duty_init[PWM_CHANNEL_NUM_MAX]; // pwm duty
+	io_info[pin][0] = EspDigitalPins[pin].mux;
+	io_info[pin][1] = EspDigitalPins[pin].gpioFunc;
+	io_info[pin][2] = EspDigitalPins[pin].id;
+	pwm_duty_init[pin] = 0; // Start with zero output
+	channels[pin] = pin;
+	pwm_init(1000, pwm_duty_init, 1, io_info);
+	pwm_start();
+	maxduty = 22222; // for period of 1000
+}
+*/
 HardwarePWM::~HardwarePWM() {
 	// There is no function in the SDK to stop PWM output, yet.
 }
